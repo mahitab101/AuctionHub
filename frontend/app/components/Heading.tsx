@@ -1,7 +1,7 @@
 type HeadingProps = {
     title: string;
     subTitle?: string;
-    center: boolean;
+    center?: boolean;
 }
 export default function Heading({ title, subTitle, center }: HeadingProps) {
     return (

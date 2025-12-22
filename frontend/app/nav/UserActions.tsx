@@ -1,8 +1,10 @@
 "use client"
 
+import { useParamsStore } from "@/hooks/useParsmsStore"
 import { User } from "next-auth"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
+import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 
 type UserActionsProps = {
@@ -10,6 +12,9 @@ type UserActionsProps = {
 }
 
 export default function UserActions({ user }: UserActionsProps) {
+    const router = useRouter();
+    const pathname = usePathname()
+    const { setParams } = useParamsStore();
     const [open, setOpen] = useState(false)
     const ref = useRef<HTMLDivElement>(null)
 
@@ -22,7 +27,25 @@ export default function UserActions({ user }: UserActionsProps) {
         }
         document.addEventListener("mousedown", handler)
         return () => document.removeEventListener("mousedown", handler)
-    }, [])
+    }, []);
+
+    // function setSeller(){
+    //     setParams({seller:user.username,winner:undefined})
+    // }
+    // function setWinner(){
+    //     setParams({seller:undefined,winner:user.username})
+    // }
+
+    function setUserFilter(type: "seller" | "winner") {
+        setParams({
+            seller: undefined,
+            winner: undefined,
+            [type]: user.username,
+        })
+
+        if (pathname !== '/') router.push('/')
+    }
+
 
     return (
         <div className="relative inline-block text-left" ref={ref}>
@@ -47,6 +70,7 @@ export default function UserActions({ user }: UserActionsProps) {
                         onClick={() => {
                             setOpen(false)
                             // TODO: navigate or open modal
+                             setUserFilter("seller")
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
@@ -57,6 +81,7 @@ export default function UserActions({ user }: UserActionsProps) {
                         type="button"
                         onClick={() => {
                             setOpen(false)
+                            setUserFilter("winner")
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
@@ -70,7 +95,9 @@ export default function UserActions({ user }: UserActionsProps) {
                         }}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     >
-                        Sell My Car
+                        <Link href={"/auctions/create"}>
+                            Sell My Car
+                        </Link>
                     </button>
 
                     {/* Only link */}

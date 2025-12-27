@@ -1,8 +1,47 @@
+import { getAuctionDetails } from '@/app/actions/auctionactions';
+import Heading from '@/app/components/Heading';
 import React from 'react'
+import CountdownTimer from '../../CountdownTimer';
+import CarImage from '../../CarImage';
+import DetailedSpecs from './DetailedSpecs';
+import EditButton from './EditButton';
+import { getCurrentUser } from '@/app/actions/authActions';
+import AuctionButton from './AuctionButton';
 
-export default async function Details({params}: {params: Promise<{ id: string }>}) {
-   const { id } = await params;
+export default async function Details({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const auction = await getAuctionDetails(id);
+  const user = await getCurrentUser();
+
+if (!auction) {
+  return <p>Item not found or deleted</p>;
+}
   return (
-    <div>Details for {id}</div>
+    <>
+      <div className='flex justify-between'>
+        <div className="flex items-center gap-3">
+          <Heading title={`${auction.make} ${auction.model}`} />
+          {user?.username === auction.seller && (
+            // <EditButton id={auction.id} />
+            <AuctionButton id={auction.id} />
+          )}
+        </div>
+        <div className="flex gap-3">
+          <h3 className="text-3xl font-semibold">Time remaining</h3>
+          <CountdownTimer auctionEnd={auction.auctionEnd} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-6 mt-3">
+        <div className='relative w-full bg-gray-200 aspect-16/10 rounded-lg overflow-hidden'>
+          <CarImage imageUrl={auction.imageUrl} />
+        </div>
+        <div className='border-2 rounded-lg p-2 bg-gray-100'>
+          <Heading title='Bids' />
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-1 rounded-lg">
+        <DetailedSpecs auction={auction} />
+      </div>
+    </>
   )
 }

@@ -4,62 +4,57 @@ import { useRouter } from "next/navigation";
 import { FaSpinner } from "react-icons/fa";
 import Input from "../components/Input";
 import DateInput from "../components/DateInput";
+import { createAuction, updateAuction } from "../actions/auctionactions";
+import toast from "react-hot-toast";
+import { Auction } from "@/types";
+import { useEffect } from "react";
 
-export default function AuctionForm() {
+type AuctionFormProps = {
+    auction?: Auction;
+}
+
+export default function AuctionForm({ auction }: AuctionFormProps) {
     const router = useRouter();
-    const { control, handleSubmit,
+    const { control, handleSubmit, reset, setFocus,
         formState: { isSubmitting, isValid, isDirty } } = useForm({
-            mode:"onTouched"
+            mode: "onTouched"
         });
+
+    useEffect(() => {
+        if(auction){
+            const {make, model, color, mileage, year,imageUrl,reservePrice,auctionEnd} = auction;
+            reset({make, model, color, mileage, year,imageUrl,reservePrice,auctionEnd})
+        }
+        setFocus('make')
+    }, [setFocus,auction,reset])
 
     const delay = (ms: number) =>
         new Promise((resolve) => setTimeout(resolve, ms));
 
     async function onSubmit(data: FieldValues) {
-        await delay(2000)
-        console.log(data);
+        try {
+             let id='';
+            let res;
+            await delay(2000);
+            if(auction){
+                res = await updateAuction(data,auction.id);
+                id=auction.id
+            }else{
+                 res = await createAuction(data);
+                 id=res.id
+            }
+            if (res.error) throw res.error;
 
+            router.push(`/auctions/details/${id}`)
+
+        } catch (error: any) {
+            toast.error(error.status + ' ' + error.message);
+            console.log(error);
+        }
     }
+
     return (
         <form className='flex flex-col mt-3' onSubmit={handleSubmit(onSubmit)}>
-            {/* <div className='mb-3 block'>
-                <input
-                    type="text"
-                    {...register("make", { required: "make is required" })}
-                    placeholder="Make"
-                    className={clsx(
-                        "w-full px-3 py-2 rounded-md border text-sm focus:outline-none focus:ring-2",
-                        errors.make
-                            ? "border-red-500 focus:ring-red-500"
-                            : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                    )}
-                />
-                {errors.make && (
-                    <p className="mt-1 text-sm text-red-600">
-                        {errors.make.message as string}
-                    </p>
-                )}
-
-            </div>
-            <div className='mb-3 block'>
-                <input
-                    type="text"
-                    {...register("model", { required: "model is required" })}
-                    placeholder="model"
-                    className={clsx(
-                        "w-full px-3 py-2 rounded-md border text-sm focus:outline-none focus:ring-2",
-                        errors.model
-                            ? "border-red-500 focus:ring-red-500"
-                            : "border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                    )}
-                />
-                {errors.model && (
-                    <p className="mt-1 text-sm text-red-600">
-                        {errors.model.message as string}
-                    </p>
-                )}
-
-            </div> */}
             <Input
                 name="make"
                 control={control}
@@ -96,10 +91,16 @@ export default function AuctionForm() {
                     rules={{ required: "mileage is required" }}
                 />
             </div>
-
+            <Input
+                name="imageUrl"
+                control={control}
+                label="Image Url"
+                type="text"
+                rules={{ required: "Image Url is required" }}
+            />
             <div className="grid grid-cols-2 gap-3">
                 <Input
-                    name="reservedPrice"
+                    name="reservePrice"
                     control={control}
                     label="reserved Price (enter 0 if no reserve)"
                     type="number"
@@ -107,6 +108,7 @@ export default function AuctionForm() {
                 />
                 <DateInput
                     name="auctionEnd"
+                    disabled={!!auction}
                     control={control}
                     label="auction End date/time"
                     showTimeSelect
@@ -140,7 +142,7 @@ export default function AuctionForm() {
                             "
                 >
                     {isSubmitting && <FaSpinner className="animate-spin" />}
-                    Submit
+                      {auction ? 'Update Auction' : 'Create Auction'}
                 </button>
 
 

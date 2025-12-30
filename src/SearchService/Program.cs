@@ -3,7 +3,8 @@ using MassTransit;
 using MongoDB.Driver;
 using Polly;
 using Polly.Extensions.Http;
-using SearchService.Consumer;
+using Serilog;
+using SearchService.Consumers;
 using SearchService.Data;
 using SearchService.RequestHelpers;
 using SearchService.Service;
@@ -11,6 +12,10 @@ using SearchService.Service;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+//Serilog
+builder.Host.UseSerilog((context, configuration) =>
+configuration.ReadFrom.Configuration(context.Configuration)
+);
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient<AuctionServiceHttpClient>().AddPolicyHandler(GetPolicy());
@@ -21,8 +26,12 @@ builder.Services.AddAutoMapper(cfg =>
 
 builder.Services.AddMassTransit(x =>
 {
-    x.AddConsumersFromNamespaceContaining<AuctionCreatedConsumer>();
-    x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("search", false));
+    // ✅ Registers ALL consumers in SearchService automatically
+    x.AddConsumers(typeof(Program).Assembly);
+
+    x.SetEndpointNameFormatter(
+        new KebabCaseEndpointNameFormatter("search", false)
+    );
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -31,19 +40,17 @@ builder.Services.AddMassTransit(x =>
             h.Username(builder.Configuration.GetValue("RabbitMq:Username", "guest"));
             h.Password(builder.Configuration.GetValue("RabbitMq:Password", "guest"));
         });
-        cfg.ReceiveEndpoint("search-auction-created", e =>
-        {
-            e.UseMessageRetry(r => r.Interval(5, 5));
-            e.ConfigureConsumer<AuctionCreatedConsumer>(context);
-        });
+
+        // ✅ Wires ALL consumers to queues
         cfg.ConfigureEndpoints(context);
     });
 });
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
-
+app.UseSerilogRequestLogging();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

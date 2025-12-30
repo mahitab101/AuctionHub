@@ -1,44 +1,20 @@
-using AuctionService.Consumer;
-using AuctionService.Data;
-using AuctionService.RequestHelper;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Serilog;
+using MongoDB.Driver;
+using MongoDB.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
-//Serilog
 
-builder.Host.UseSerilog((context, configuration) =>
-configuration.ReadFrom.Configuration(context.Configuration)
-);
 // Add services to the container.
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-// bd 
-builder.Services.AddDbContext<AuctionDbContext>(options =>
-{
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
-});
-//mapper configuration
-builder.Services.AddAutoMapper(cfg =>
-{
-    cfg.AddProfile(new MappingProfile());
-});
+builder.Services.AddOpenApi();
 
-//
+
 builder.Services.AddMassTransit(x =>
 {
-    x.AddEntityFrameworkOutbox<AuctionDbContext>(o =>
-    {
-        o.QueryDelay = TimeSpan.FromSeconds(10);
-        o.UsePostgres();
-        o.UseBusOutbox();
-    });
-
-    x.AddConsumersFromNamespaceContaining<AuctionCreatedFaultConsumer>();
-    x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("auction", false));
+    x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("bids", false));
 
     x.UsingRabbitMq((context, cfg) =>
     {
@@ -59,12 +35,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
     options.TokenValidationParameters.NameClaimType = "username";
 });
 
-builder.Services.AddOpenApi();
-
-
 
 var app = builder.Build();
-app.UseSerilogRequestLogging();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -73,18 +46,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-try
-{
-    DbInitializer.InitDb(app);
-}
-catch (Exception e)
-{
-    Console.WriteLine(e);
-}
-
+await DB.InitAsync("BidDb", MongoClientSettings
+                          .FromConnectionString(builder.Configuration.GetConnectionString("BidDbConnection")));
 app.Run();

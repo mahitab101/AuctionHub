@@ -64,8 +64,7 @@ async function request(
 
   const options: RequestInit = {
     method,
-    headers, 
-     next: { revalidate: 60 }
+    headers
   };
 
 
@@ -78,18 +77,29 @@ async function request(
 }
 
 async function handleResponse(response: Response) {
-  const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
+  const contentType = response.headers.get("content-type");
 
-     if(response.ok) {
-        return data || response.statusText;
-    }else{
-        const error = {
-            status:response.status,
-            message:response.statusText
-        }
-        return {error}
-    }
+  let data: any = null;
+
+  if (contentType?.includes("application/json")) {
+    data = await response.json();
+  } else {
+    data = await response.text(); // fallback for plain text
+  }
+
+  if (response.ok) {
+    return data;
+  } else {
+    return {
+      error: {
+        status: response.status,
+        message:
+          typeof data === "string"
+            ? data
+            : data?.message || response.statusText,
+      },
+    };
+  }
 }
 
 async function getHeaders(): Promise<Headers> {

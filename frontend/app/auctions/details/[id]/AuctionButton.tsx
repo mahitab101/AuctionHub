@@ -23,15 +23,19 @@ export default function AuctionButton({ id }: AuctionButtonProps) {
         if (!confirmed) return;
 
         setLoading(true);
-        deleteAuction(id).then(res => {
-            if (res.error) throw res.error
-            router.refresh();
-            router.push("/")
-        })
+        deleteAuction(id)
+            .then(res => {
+                if (res?.error) throw res.error;
+
+                toast.success("Auction deleted");
+                router.push("/");
+                router.refresh();
+            })
             .catch((error) => {
-                toast.error(`${error.status} ${error.message}`);
+                toast.error(`${error.status ?? ""} ${error.message ?? "Error"}`);
             })
             .finally(() => setLoading(false));
+
     }
 
     return (

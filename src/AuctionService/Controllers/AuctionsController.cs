@@ -19,12 +19,14 @@ namespace AuctionService.Controllers
         private readonly AuctionDbContext _context;
         private readonly IMapper _mapper;
         private readonly IPublishEndpoint _publishEndpoint;
+        private readonly ILogger<AuctionsController> _logger;
 
-        public AuctionsController(AuctionDbContext context, IMapper mapper,IPublishEndpoint publishEndpoint)
+        public AuctionsController(AuctionDbContext context, IMapper mapper,IPublishEndpoint publishEndpoint, ILogger<AuctionsController> logger )
         {
             _context = context;
             _mapper = mapper;
             _publishEndpoint = publishEndpoint;
+            _logger=logger;
         }
 
         [HttpGet]
@@ -51,7 +53,7 @@ namespace AuctionService.Controllers
             return _mapper.Map<AuctionDto>(auction);
 
         }
-        
+
         [Authorize]
         [HttpPost]
         public async Task<ActionResult<AuctionDto>> PostAuction(CreateAuctionDto createAuctionDto)
@@ -63,12 +65,15 @@ namespace AuctionService.Controllers
             _context.Auctions.Add(auction);
 
             var newAuction = _mapper.Map<AuctionDto>(auction);
+            _logger.LogInformation("PublishEndpoint type: {Type}", _publishEndpoint.GetType().FullName);
 
             await _publishEndpoint.Publish(_mapper.Map<AuctionCreated>(newAuction));
-            
-            var result = await _context.SaveChangesAsync() > 0;
-            if (!result) return BadRequest("Can't save changes to the DB");
 
+            _logger.LogInformation("PublishEndpoint type: {Type}", _publishEndpoint.GetType().FullName);
+
+            var result = await _context.SaveChangesAsync() > 0;
+            if (!result) return BadRequest(new { message = "Can't save changes to the DB" });
+            
             return CreatedAtAction(nameof(GetAuctionById), new { auction.Id }, newAuction);
         }
 
@@ -96,7 +101,7 @@ namespace AuctionService.Controllers
 
             if (result) return Ok(result);
 
-            return BadRequest("Something went wrong.!");
+            return BadRequest(new { message = "Something went wrong.!" });
         }
        
         [Authorize]
@@ -104,17 +109,34 @@ namespace AuctionService.Controllers
         public async Task<ActionResult> DeleteAuction(Guid id)
         {
             var auction = await _context.Auctions.FindAsync(id);
+
             if (auction == null) return NotFound();
             //check if seller == username
             if(auction.Seller != User.Identity.Name) return Forbid();
 
             _context.Auctions.Remove(auction);
 
-            await _publishEndpoint.Publish<AuctionDeleted>(new {Id=auction.Id.ToString()});
+            _logger.LogInformation("Publishing AuctionDeleted for {AuctionId}", auction.Id);
 
-            var result = await _context.SaveChangesAsync() > 0;
-            if (result) return Ok("Item Deleted Successfully.");
-            return BadRequest("");
+          
+
+            //await _publishEndpoint.Publish(new AuctionDeleted { Id = auction.Id.ToString() });
+            await _publishEndpoint.Publish<Contracts.AuctionDeleted>(new
+            {
+                Id = auction.Id.ToString()
+            });
+
+            _logger.LogInformation("Published AuctionDeleted for {AuctionId}", auction.Id);
+
+
+
+            var result = await _context.SaveChangesAsync();
+
+            if (result < 0) return BadRequest(new { message = "Could not update DB" });
+
+
+            return Ok(new { message = "Item Deleted Successfully." });
+
         }
     }
 }

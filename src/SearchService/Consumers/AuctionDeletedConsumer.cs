@@ -8,13 +8,25 @@ namespace SearchService.Consumers;
 
 public class AuctionDeletedConsumer : IConsumer<AuctionDeleted>
 {
+    private readonly ILogger<AuctionDeletedConsumer> _logger;
+    public AuctionDeletedConsumer(ILogger<AuctionDeletedConsumer> logger)
+    {
+        _logger = logger;
+    }
+
     public async Task Consume(ConsumeContext<AuctionDeleted> context)
     {
-        Console.WriteLine($"Consuming Deleting Auction {context.Message.Id}");
 
-        var result = await DB.DeleteAsync<Item>(context.Message.Id);
-        if (!result.IsAcknowledged)
-            throw new MessageException(typeof(AuctionUpdated), "Problem updating MongoDB");
-        
+        _logger.LogInformation("Consuming Auction Deleted {id}", context.Message.Id);
+
+        var result = await DB.DeleteAsync<Item>(
+            x => x.ID == context.Message.Id
+        );
+
+        if (result.DeletedCount == 0)
+        {
+            _logger.LogInformation("Item not found in Mongo {id}",context.Message.Id);
+        }
     }
+
 }

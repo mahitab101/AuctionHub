@@ -1,6 +1,7 @@
 using AuctionService.Consumer;
 using AuctionService.Data;
 using AuctionService.RequestHelper;
+using AuctionService.Services;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -36,16 +37,16 @@ builder.Services.AddMassTransit(x =>
         o.UsePostgres();
         o.UseBusOutbox();
     });
+    x.AddConsumers(typeof(Program).Assembly);
 
-    x.AddConsumersFromNamespaceContaining<AuctionCreatedFaultConsumer>();
     x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter("auction", false));
 
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host(builder.Configuration["RabbitMq:Host"], "/", h =>
         {
-            h.Username(builder.Configuration.GetValue("RabbitMq:Username","guest"));
-            h.Password(builder.Configuration.GetValue("RabbitMq:Password","guest"));
+            h.Username(builder.Configuration.GetValue("RabbitMq:Username", "guest"));
+            h.Password(builder.Configuration.GetValue("RabbitMq:Password", "guest"));
         });
         cfg.ConfigureEndpoints(context);
     });
@@ -61,7 +62,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 
 builder.Services.AddOpenApi();
 
-
+builder.Services.AddGrpc();
 
 var app = builder.Build();
 app.UseSerilogRequestLogging();
@@ -70,14 +71,13 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
+app.MapGrpcService<GrpcAuctionService>();
 try
 {
     DbInitializer.InitDb(app);
@@ -86,5 +86,18 @@ catch (Exception e)
 {
     Console.WriteLine(e);
 }
+
+// app.Lifetime.ApplicationStarted.Register(() =>
+// {
+//     try
+//     {
+//         DbInitializer.InitDb(app);
+//     }
+//     catch (Exception ex)
+//     {
+//         Console.WriteLine("Seeding failed:");
+//         Console.WriteLine(ex);
+//     }
+// });
 
 app.Run();

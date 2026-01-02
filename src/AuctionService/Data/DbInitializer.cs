@@ -1,28 +1,39 @@
-using System;
 using AuctionService.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace AuctionService.Data;
 
-public class DbInitializer
+public static class DbInitializer
 {
-    public static void InitDb(WebApplication app)
+    public static void InitDb(IApplicationBuilder app)
     {
-        using var scope = app.Services.CreateScope();
-        SeedData(scope.ServiceProvider.GetService<AuctionDbContext>());
-    }
-    private static void SeedData(AuctionDbContext context)
-    {
+        using var scope = app.ApplicationServices.CreateScope();
+
+        var context = scope.ServiceProvider.GetRequiredService<AuctionDbContext>();
+
+        Console.WriteLine("Starting database migration...");
+
         context.Database.Migrate();
+
         if (context.Auctions.Any())
         {
             Console.WriteLine("Already have data - no need to seed");
             return;
         }
 
-        var auctions = new List<Auction>()
+        Console.WriteLine("Seeding database...");
+
+        context.Auctions.AddRange(GetAuctions());
+        context.SaveChanges();
+
+        Console.WriteLine("Database seeded successfully");
+    }
+
+    private static List<Auction> GetAuctions()
+    {
+        return new List<Auction>
         {
-	    // 1 Ford GT
+            // 1 Ford GT
             new Auction
             {
                 Id = Guid.Parse("afbee524-5972-4075-8800-7d1f9d7b0a0c"),
@@ -40,6 +51,7 @@ public class DbInitializer
                     ImageUrl = "https://cdn.pixabay.com/photo/2016/05/06/16/32/car-1376190_960_720.jpg"
                 }
             },
+
             // 2 Bugatti Veyron
             new Auction
             {
@@ -58,7 +70,8 @@ public class DbInitializer
                     ImageUrl = "https://cdn.pixabay.com/photo/2012/05/29/00/43/car-49278_960_720.jpg"
                 }
             },
-            // 3 Ford mustang
+
+            // 3 Ford Mustang
             new Auction
             {
                 Id = Guid.Parse("bbab4d5a-8565-48b1-9450-5ac2a5c4a654"),
@@ -75,6 +88,7 @@ public class DbInitializer
                     ImageUrl = "https://cdn.pixabay.com/photo/2012/11/02/13/02/car-63930_960_720.jpg"
                 }
             },
+
             // 4 Mercedes SLK
             new Auction
             {
@@ -93,6 +107,7 @@ public class DbInitializer
                     ImageUrl = "https://cdn.pixabay.com/photo/2016/04/17/22/10/mercedes-benz-1335674_960_720.png"
                 }
             },
+
             // 5 BMW X1
             new Auction
             {
@@ -111,7 +126,8 @@ public class DbInitializer
                     ImageUrl = "https://cdn.pixabay.com/photo/2017/08/31/05/47/bmw-2699538_960_720.jpg"
                 }
             },
-            // 6 Ferrari spider
+
+            // 6 Ferrari Spider
             new Auction
             {
                 Id = Guid.Parse("dc1e4071-d19d-459b-b848-b5c3cd3d151f"),
@@ -129,6 +145,7 @@ public class DbInitializer
                     ImageUrl = "https://cdn.pixabay.com/photo/2017/11/09/01/49/ferrari-458-spider-2932191_960_720.jpg"
                 }
             },
+
             // 7 Ferrari F-430
             new Auction
             {
@@ -147,6 +164,7 @@ public class DbInitializer
                     ImageUrl = "https://cdn.pixabay.com/photo/2017/11/08/14/39/ferrari-f430-2930661_960_720.jpg"
                 }
             },
+
             // 8 Audi R8
             new Auction
             {
@@ -164,6 +182,7 @@ public class DbInitializer
                     ImageUrl = "https://cdn.pixabay.com/photo/2019/12/26/20/50/audi-r8-4721217_960_720.jpg"
                 }
             },
+
             // 9 Audi TT
             new Auction
             {
@@ -182,6 +201,7 @@ public class DbInitializer
                     ImageUrl = "https://cdn.pixabay.com/photo/2016/09/01/15/06/audi-1636320_960_720.jpg"
                 }
             },
+
             // 10 Ford Model T
             new Auction
             {
@@ -201,8 +221,5 @@ public class DbInitializer
                 }
             }
         };
-        context.AddRange(auctions);
-        context.SaveChanges();
     }
-
 }

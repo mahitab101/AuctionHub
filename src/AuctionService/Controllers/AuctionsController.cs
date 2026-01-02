@@ -65,11 +65,8 @@ namespace AuctionService.Controllers
             _context.Auctions.Add(auction);
 
             var newAuction = _mapper.Map<AuctionDto>(auction);
-            _logger.LogInformation("PublishEndpoint type: {Type}", _publishEndpoint.GetType().FullName);
 
             await _publishEndpoint.Publish(_mapper.Map<AuctionCreated>(newAuction));
-
-            _logger.LogInformation("PublishEndpoint type: {Type}", _publishEndpoint.GetType().FullName);
 
             var result = await _context.SaveChangesAsync() > 0;
             if (!result) return BadRequest(new { message = "Can't save changes to the DB" });

@@ -29,7 +29,6 @@ export default function AuctionButton({ id }: AuctionButtonProps) {
 
                 toast.success("Auction deleted");
                 router.push("/");
-                router.refresh();
             })
             .catch((error) => {
                 toast.error(`${error.status ?? ""} ${error.message ?? "Error"}`);

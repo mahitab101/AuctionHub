@@ -7,20 +7,31 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="15.1.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.30.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.55.0" />
+    <PackageReference Include="Grpc.Tools" Version="2.56.0" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.5" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.11" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.11" />
-    <PackageReference Include="MongoDB.Entities" Version="25.0.0-beta.3" />
+    <PackageReference Include="MongoDB.Entities" Version="23.2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Consumers\" />
     <Folder Include="Controllers\" />
+    <Folder Include="DTOs\" />
     <Folder Include="Models\" />
+    <Folder Include="RequestHelpers\" />
+    <Folder Include="Services\" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Contracts\Contracts.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+  <Protobuf Include="Protos\auctions.proto" GrpcServices="Client" />
+</ItemGroup>
 
 </Project>

@@ -19,6 +19,7 @@ configuration.ReadFrom.Configuration(context.Configuration)
 
 builder.Services.AddControllers();
 builder.Services.AddHttpClient<AuctionServiceHttpClient>().AddPolicyHandler(GetPolicy());
+
 builder.Services.AddAutoMapper(cfg =>
 {
     cfg.AddProfile(new MappingProfile());

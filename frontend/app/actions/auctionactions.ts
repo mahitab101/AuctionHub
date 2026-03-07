@@ -42,5 +42,5 @@ export async function getBidsForAuction(id: string): Promise<Bid[]> {
 }
 
 export async function placeBidForAuction(auctionId: string, amount: number) {
-  return fetchWrapper.post(`bids?auction=${auctionId}&amount=${amount}`, {});
+  return fetchWrapper.post(`bids?auctionId=${auctionId}&amount=${amount}`, {});
 }

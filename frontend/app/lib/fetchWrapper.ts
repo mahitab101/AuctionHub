@@ -55,18 +55,13 @@ const baseUrl = "http://localhost:6001/";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
-async function request(
-  url: string,
-  method: HttpMethod,
-  body?: unknown
-) {
+async function request(url: string, method: HttpMethod, body?: unknown) {
   const headers = await getHeaders();
 
   const options: RequestInit = {
     method,
-    headers
+    headers,
   };
-
 
   if (body && method !== "GET") {
     options.body = JSON.stringify(body);
@@ -93,10 +88,7 @@ async function handleResponse(response: Response) {
     return {
       error: {
         status: response.status,
-        message:
-          typeof data === "string"
-            ? data
-            : data?.message || response.statusText,
+        message: typeof data === "string" ? data : response.statusText,
       },
     };
   }
@@ -119,5 +111,5 @@ export const fetchWrapper = {
   get: (url: string) => request(url, "GET"),
   post: (url: string, body: unknown) => request(url, "POST", body),
   put: (url: string, body: unknown) => request(url, "PUT", body),
-  delete: (url: string) => request(url, "DELETE")
+  delete: (url: string) => request(url, "DELETE"),
 };
